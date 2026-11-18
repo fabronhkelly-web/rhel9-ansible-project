@@ -1,0 +1,5 @@
+---
+- name: Manage admin accounts
+  hosts: rhel9
+  roles:
+    - lab_users

@@ -1,0 +1,7 @@
+---
+lab_admin_group: sysadmins
+lab_admins:
+  - name: jdoe
+    comment: "Jane Operator"
+  - name: asmith
+    comment: "Alex Smith"

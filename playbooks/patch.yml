@@ -1,0 +1,47 @@
+---
+- name: Rolling security patching for RHEL 9
+  hosts: rhel9:!control          # patch everything except the control node
+  serial: 1                      # one server at a time
+  max_fail_percentage: 0         # stop the whole run if one server fails
+
+  tasks:
+    - name: Make sure needs-restarting is available
+      ansible.builtin.dnf:
+        name: yum-utils
+        state: present
+
+    - name: Record kernel before patching
+      ansible.builtin.command: uname -r
+      register: kernel_before
+      changed_when: false
+
+    - name: Apply security updates only
+      ansible.builtin.dnf:
+        name: "*"
+        security: true
+        state: latest
+      register: patch_result
+
+    - name: Check whether a reboot is required
+      ansible.builtin.command: needs-restarting -r
+      register: reboot_needed
+      changed_when: false
+      failed_when: reboot_needed.rc not in [0, 1]
+
+    - name: Reboot if required
+      ansible.builtin.reboot:
+        reboot_timeout: 900
+        msg: "Ansible: rebooting after security patching"
+      when: reboot_needed.rc == 1
+
+    - name: Record kernel after patching
+      ansible.builtin.command: uname -r
+      register: kernel_after
+      changed_when: false
+
+    - name: Report
+      ansible.builtin.debug:
+        msg: >-
+          {{ inventory_hostname }}: updates applied={{ patch_result.changed }},
+          rebooted={{ reboot_needed.rc == 1 }},
+          kernel {{ kernel_before.stdout }} -> {{ kernel_after.stdout }}

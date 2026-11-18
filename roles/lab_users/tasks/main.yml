@@ -1,0 +1,22 @@
+---
+- name: Ensure admin group exists
+  ansible.builtin.group:
+    name: "{{ lab_admin_group }}"
+    state: present
+
+- name: Ensure admin users exist
+  ansible.builtin.user:
+    name: "{{ item.name }}"
+    comment: "{{ item.comment }}"
+    groups: "{{ lab_admin_group }}"
+    append: true
+    password_expire_max: 60
+    password_expire_min: 1
+  loop: "{{ lab_admins }}"
+
+- name: Sudo rule for the admin group
+  ansible.builtin.copy:
+    dest: /etc/sudoers.d/10-{{ lab_admin_group }}
+    content: "%{{ lab_admin_group }} ALL=(ALL) ALL\n"
+    mode: "0440"
+    validate: /usr/sbin/visudo -cf %s
