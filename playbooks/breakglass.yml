@@ -1,0 +1,13 @@
+---
+- name: Break-glass local admin (password stored in Ansible Vault)
+  hosts: rhel9
+  tasks:
+    - name: Break-glass local admin
+      ansible.builtin.user:
+        name: breakglass
+        comment: "Emergency local admin - see Vault"
+        password: "{{ vault_breakglass_password | password_hash(\"sha512\") }}"
+        update_password: on_create
+        groups: wheel
+        append: true
+      no_log: true
