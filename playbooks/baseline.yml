@@ -1,0 +1,70 @@
+---
+- name: Apply lab baseline to RHEL 9 servers
+  hosts: rhel9
+  vars:
+    baseline_packages:
+      - chrony
+      - vim-enhanced
+      - bash-completion
+      - sysstat
+      - tmux
+      - audit
+      - openscap-scanner
+      - scap-security-guide
+
+  tasks:
+    - name: Install baseline packages
+      ansible.builtin.dnf:
+        name: "{{ baseline_packages }}"
+        state: present
+
+    - name: Make sure time sync is running
+      ansible.builtin.service:
+        name: chronyd
+        state: started
+        enabled: true
+
+    - name: Make sure auditd is running
+      ansible.builtin.service:
+        name: auditd
+        state: started
+        enabled: true
+
+    - name: Deploy the login banner
+      ansible.builtin.copy:
+        src: ../files/issue
+        dest: /etc/issue
+        owner: root
+        group: root
+        mode: "0644"
+
+    - name: Harden SSH
+      ansible.builtin.copy:
+        dest: /etc/ssh/sshd_config.d/00-stig.conf
+        content: |
+          Banner /etc/issue
+          PermitRootLogin no
+          PermitEmptyPasswords no
+          ClientAliveInterval 600
+          ClientAliveCountMax 1
+        owner: root
+        group: root
+        mode: "0600"
+        validate: /usr/sbin/sshd -t -f %s
+      notify: Restart sshd
+
+    - name: Allow only ssh and http through the firewall
+      ansible.posix.firewalld:
+        service: "{{ item }}"
+        permanent: true
+        immediate: true
+        state: enabled
+      loop:
+        - ssh
+        - http
+
+  handlers:
+    - name: Restart sshd
+      ansible.builtin.service:
+        name: sshd
+        state: restarted
