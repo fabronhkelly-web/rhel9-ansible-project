@@ -48,6 +48,21 @@ Vault file `inventory/group_vars/rhel9/vault.yml` and the vault password are exc
 | rhel01 | Manual fixes (banner, SSH, pwquality, mounts, audit rules, PAM, Ctrl-Alt-Del, GPG) | 51.3% | 207 | 5 |
 | rhel01 | + FIPS mode and FIPS:STIG crypto policy | 51.7% | 200 | 2 |
 | rhel01 | + GRUB2 password and non-default superuser (`bootadmin`) | 52.1% | 199 | **0** |
-| rhel02 | After `rhel9-playbook-stig.yml` | _pending_ | | |
+| rhel02 | Clone of hardened rhel01 (before playbook) | 52.3% | 198 | 0 |
+| rhel02 | After `rhel9-playbook-stig.yml` (46 min, ok=2999 changed=350 failed=0) | **95.2%** | **14** | **0** |
 
 All 10 CAT I findings on rhel01 are closed. The GRUB superuser rename had no automated fix in the SCAP content, so it was done by hand in `/etc/grub.d/01_users`, then verified with a reboot. The remaining CAT II/III findings are targeted by the STIG playbook; exceptions are tracked in a POA&M-style table.
+
+### Remaining findings on rhel02 (14 CAT II, tracked in the POA&M)
+- **Skipped on purpose** so automation keeps working: `sudo_remove_nopasswd`, `service_fapolicyd_enabled`, `fapolicy_default_deny`
+  (run with `--skip-tags`; in production the Ansible account would use Ansible Automation Platform credentials with a sudo password,
+  and fapolicyd would get a trust rule for Ansible before enforcing).
+- **Lab environment:** single DNS server (IdM adds a second in Project 3), smart card certmap (no PKI), chrony `pool` vs `server`,
+  authorized local user list, user namespaces (no automated fix), SELinux sudo context elevation, `pam_wheel` for `su`,
+  world-writable directory without sticky bit (the lab's VMware shared folder), SSH MAC crypto-policy and `difok` checks.
+
+```bash
+SKIP=sudo_remove_nopasswd,sudo_remove_no_authenticate,service_fapolicyd_enabled,fapolicy_default_deny
+ansible-playbook playbooks/rhel9-playbook-stig.yml --skip-tags "$SKIP"
+ansible managed -m ansible.builtin.reboot
+```
