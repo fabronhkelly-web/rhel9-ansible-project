@@ -47,6 +47,7 @@ Vault file `inventory/group_vars/rhel9/vault.yml` and the vault password are exc
 | rhel01 | Fresh install | 47.4% | 264 | 10 |
 | rhel01 | Manual fixes (banner, SSH, pwquality, mounts, audit rules, PAM, Ctrl-Alt-Del, GPG) | 51.3% | 207 | 5 |
 | rhel01 | + FIPS mode and FIPS:STIG crypto policy | 51.7% | 200 | 2 |
+| rhel01 | + GRUB2 password and non-default superuser (`bootadmin`) | 52.1% | 199 | **0** |
 | rhel02 | After `rhel9-playbook-stig.yml` | _pending_ | | |
 
-Remaining CAT I on rhel01: GRUB2 superuser/password (set by the owner). Exceptions are tracked in a POA&M-style table.
+All 10 CAT I findings on rhel01 are closed. The GRUB superuser rename had no automated fix in the SCAP content, so it was done by hand in `/etc/grub.d/01_users`, then verified with a reboot. The remaining CAT II/III findings are targeted by the STIG playbook; exceptions are tracked in a POA&M-style table.
